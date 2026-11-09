@@ -338,10 +338,25 @@ void OF_Serial::SerialProcessing()
                 } else Serial.println("SERIALREAD: Player remap command called, but an invalid or no slot number was declared!");
                 break;
               }
+              // Dump button bindings (debug): saved bytes and the live ones the gun reports with.
+              // Each row: type/code onscreen, type/code offscreen, type/code gamepad. Types: 0 mouse, 1 keyboard, 2 gamepad.
+              case 'B':
+                Serial.printf("Player Start key: 0x%02X  Select key: 0x%02X  PID: %d  Low Buttons: %d\r\n",
+                              (uint8_t)FW_Common::playerStartBtn, (uint8_t)FW_Common::playerSelectBtn,
+                              OF_Prefs::usb.devicePID, OF_Prefs::toggles[OF_Const::lowButtonsMode]);
+                for(unsigned int i = 0; i < ButtonCount; ++i) {
+                    const uint8_t *live = &LightgunButtons::ButtonDesc[i].reportType;
+                    Serial.printf("Btn %2u pin %3d  saved %02X %02X | %02X %02X | %02X %02X   live %02X %02X | %02X %02X | %02X %02X\r\n",
+                                  i, LightgunButtons::ButtonDesc[i].pin,
+                                  OF_Prefs::backupButtonDesc[i][0], OF_Prefs::backupButtonDesc[i][1], OF_Prefs::backupButtonDesc[i][2],
+                                  OF_Prefs::backupButtonDesc[i][3], OF_Prefs::backupButtonDesc[i][4], OF_Prefs::backupButtonDesc[i][5],
+                                  live[0], live[1], live[2], live[3], live[4], live[5]);
+                }
+                break;
               default:
                 Serial.println("SERIALREAD: Internal setting cmd detected, but not valid!");
                 Serial.println("Internally recognized commands are:");
-                Serial.println("I(nterval Autofire)2/3/4 / R(emap)1/2/3/4");
+                Serial.println("I(nterval Autofire)2/3/4 / R(emap)1/2/3/4 / B(utton bindings dump)");
                 break;
           }
           // End of 'X'
