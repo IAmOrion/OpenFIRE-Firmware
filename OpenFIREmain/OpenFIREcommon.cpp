@@ -101,6 +101,43 @@ void FW_Common::FeedbackSet()
         }
      #endif // USES_DISPLAY
     }
+
+    OutputPinsSet();
+}
+
+void FW_Common::OutputPinsSet()
+{
+    #ifdef NUM_DIGITAL_PINS
+        constexpr int pinCount = NUM_DIGITAL_PINS < 32 ? NUM_DIGITAL_PINS : 32;
+    #else
+        constexpr int pinCount = 30;
+    #endif // NUM_DIGITAL_PINS
+
+    static uint32_t heldPins = 0;   // pins this function is currently driving
+
+    const uint32_t highMask = OF_Prefs::settings[OF_Const::outputHighMask];
+    const uint32_t lowMask = OF_Prefs::settings[OF_Const::outputLowMask] & ~highMask;
+
+    // pins mapped to a function belong to that function
+    uint32_t mappedPins = 0;
+    for(int i = 0; i < OF_Const::boardInputsCount; ++i)
+        if(OF_Prefs::pins[i] >= 0 && OF_Prefs::pins[i] < 32)
+            mappedPins |= 1UL << OF_Prefs::pins[i];
+
+    for(int pin = 0; pin < pinCount; ++pin) {
+        const uint32_t bit = 1UL << pin;
+        if(mappedPins & bit) {
+            heldPins &= ~bit;
+        } else if((highMask | lowMask) & bit) {
+            pinMode(pin, OUTPUT);
+            digitalWrite(pin, (highMask & bit) ? HIGH : LOW);
+            heldPins |= bit;
+        } else if(heldPins & bit) {
+            // no longer held: release it
+            pinMode(pin, INPUT);
+            heldPins &= ~bit;
+        }
+    }
 }
 
 void FW_Common::PinsReset()

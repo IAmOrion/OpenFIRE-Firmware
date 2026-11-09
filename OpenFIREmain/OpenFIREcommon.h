@@ -34,6 +34,11 @@ public:
     //            external NeoPixels)
     static void FeedbackSet();
 
+    /// @brief    Holds unmapped pins set as outputs (settings outputHighMask / outputLowMask) HIGH or LOW.
+    /// @details  Pins dropped from the masks since the last call go back to plain inputs (no pulls).
+    ///           Pins mapped to a function are left alone. Run from FeedbackSet().
+    static void OutputPinsSet();
+
     /// @brief    Unsets any currently mapped pins back to board defaults (non-pullup inputs).
     /// @note     This should be run before any sync operation, to ensure no problems
     ///           when setting pins to any new values.
