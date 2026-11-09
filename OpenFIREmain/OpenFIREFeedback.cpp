@@ -37,7 +37,8 @@ void OF_FFB::FFBOnScreen()
                 currentMillis = millis();
                 if(currentMillis - previousMillisSol >= OF_Prefs::settings[OF_Const::solenoidOnLength])
                     digitalWrite(OF_Prefs::pins[OF_Const::solenoidPin], LOW);
-            } else if(millis() - previousMillisSol >= OF_Prefs::settings[OF_Const::solenoidHoldLength]) { // We're waiting on the extended wait before repeating in single shot mode.
+            } else if(OF_Prefs::settings[OF_Const::solenoidHoldLength] &&   // Hold Length 0 = single shot only: never start repeating while held.
+                      millis() - previousMillisSol >= OF_Prefs::settings[OF_Const::solenoidHoldLength]) { // We're waiting on the extended wait before repeating in single shot mode.
                 SolenoidActivation(0); // Process it now.
                 solenoidFirstShot = false;          // We're gonna turn this off so we don't have to pass through this check anymore.
             }
