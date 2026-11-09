@@ -828,6 +828,10 @@ void ExecRunModeProcessing()
     }
 }
 
+// Switch positions report sent while docked. Not in OpenFIREshared.h (a shared submodule), so
+// defined here; the app defines the same number.
+#define SWITCH_STATE_UPD 156
+
 // For use with the OpenFIRE app when it connects to this board.
 void ExecGunModeDocked()
 {
@@ -841,6 +845,17 @@ void ExecGunModeDocked()
     unsigned long tempChecked = millis();
     unsigned long aStickChecked = millis();
     unsigned long currentMillis = millis();
+
+    #ifdef USES_SWITCHES
+        // Switch positions for the app's Gun Tests screen: sent at once when one changes,
+        // and repeated every 500 ms so an app that just docked or just saved gets them too.
+        // Held back while the app is sending commands (docking, loading settings), so a report
+        // never lands in the middle of a reply the app is reading.
+        unsigned long switchesChecked = millis();
+        unsigned long switchesSent = 0;
+        unsigned long serialLastRx = millis(); // the dock command just arrived
+        int switchesLast = -1; // nothing sent yet
+    #endif // USES_SWITCHES
 
     char buf[64];
     int pos = sprintf(&buf[0], "%.1f"
@@ -885,6 +900,40 @@ void ExecGunModeDocked()
                     }
             }
 
+            #ifdef USES_SWITCHES
+                // [sSwitchStateUpd][switches read][switches on], bit 0 rumble, 1 solenoid, 2 autofire.
+                // A switch is on when it holds its pin to GND, as in Run mode.
+                if(currentMillis - switchesChecked >= 10 && currentMillis - serialLastRx >= 300) {
+                    switchesChecked = currentMillis;
+
+                    static const uint8_t switchInputs[3] = {
+                        OF_Const::rumbleSwitch, OF_Const::solenoidSwitch, OF_Const::autofireSwitch };
+                    uint8_t switchesRead = 0;
+                    uint8_t switchesOn = 0;
+                    for(uint8_t i = 0; i < 3; ++i) {
+                        #ifndef USES_RUMBLE
+                            if(switchInputs[i] == OF_Const::rumbleSwitch) continue;
+                        #endif // USES_RUMBLE
+                        #ifndef USES_SOLENOID
+                            if(switchInputs[i] == OF_Const::solenoidSwitch) continue;
+                        #endif // USES_SOLENOID
+                        if(OF_Prefs::pins[switchInputs[i]] < 0)
+                            continue;
+                        switchesRead |= 1 << i;
+                        if(!digitalRead(OF_Prefs::pins[switchInputs[i]]))
+                            switchesOn |= 1 << i;
+                    }
+
+                    const int switchesNow = switchesRead | (switchesOn << 8);
+                    if(switchesNow != switchesLast || currentMillis - switchesSent >= 500) {
+                        buf[0] = SWITCH_STATE_UPD, buf[1] = switchesRead, buf[2] = switchesOn;
+                        Serial.write(buf, 3);
+                        switchesLast = switchesNow;
+                        switchesSent = currentMillis;
+                    }
+                }
+            #endif // USES_SWITCHES
+
             #ifdef USES_TEMP
                 if(OF_Prefs::pins[OF_Const::tempPin] > -1) {
                     OF_FFB::TemperatureUpdate();
@@ -913,7 +962,12 @@ void ExecGunModeDocked()
             #endif // USES_ANALOG
         }
 
-        if(Serial.available()) OF_Serial::SerialProcessingDocked();
+        if(Serial.available()) {
+            #ifdef USES_SWITCHES
+                serialLastRx = millis();
+            #endif // USES_SWITCHES
+            OF_Serial::SerialProcessingDocked();
+        }
 
         if(FW_Common::gunMode != FW_Const::GunMode_Docked)
             return;
