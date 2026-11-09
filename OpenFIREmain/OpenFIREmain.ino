@@ -36,7 +36,9 @@ void setup() {
         pinMode(14, OUTPUT);
         digitalWrite(14, HIGH);
     #endif // ARDUINO_ADAFRUIT_ITSYBITSY_RP2040
-    #ifdef ARDUINO_RASPBERRY_PI_PICO
+    // The Tenstar RP2040 USB is built on the Pico core but breaks GP23 and GP25 out as normal pads,
+    // so the Pico's on-board regulator (GP23) and LED (GP25) handling is skipped for it.
+    #if defined(ARDUINO_RASPBERRY_PI_PICO) && !defined(OPENFIRE_TENSTAR_RP2040_USB)
         // Pull switching regulator pin high to stabilize reads from ADC (analog pins)
         pinMode(23, OUTPUT);
         digitalWrite(23, HIGH);

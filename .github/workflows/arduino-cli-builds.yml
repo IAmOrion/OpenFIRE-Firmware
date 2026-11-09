@@ -39,6 +39,18 @@ jobs:
             flags: freq=133,usbstack=tinyusb,flash=4194304_65536,opt=Optimize3,wificountry=worldwide,ipbtstack=ipv4only,arch=arm
             extra_flags: -DPICO_CYW43_SUPPORTED=1 -DCYW43_PIN_WL_DYNAMIC=1
 
+          # Tenstar Robot USB-A plug boards: built on the Pico / Pico 2 cores with the same flash layout,
+          # so existing saved settings carry over; the flag makes them report as their own board.
+          - name: Tenstar RP2350 USB [ARM]
+            fqbn: rpipico2
+            pretty: tenstarRP2350USB
+            flags: freq=133,usbstack=tinyusb,flash=4194304_65536,opt=Optimize3,arch=arm
+            extra_flags: -DOPENFIRE_TENSTAR_RP2350_USB
+          - name: Tenstar RP2040 USB
+            fqbn: rpipico
+            pretty: tenstarRP2040USB
+            flags: freq=133,usbstack=tinyusb,flash=2097152_65536,opt=Optimize3
+            extra_flags: -DOPENFIRE_TENSTAR_RP2040_USB
           - name: Adafruit ItsyBitsy RP2040
             fqbn: adafruit_itsybitsy
             pretty: adafruitItsy

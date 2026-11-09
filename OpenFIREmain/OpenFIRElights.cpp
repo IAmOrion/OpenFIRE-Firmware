@@ -16,7 +16,7 @@
 #ifdef LED_ENABLE
 void OF_RGB::LedInit()
 {
-    #ifdef ARDUINO_RASPBERRY_PI_PICO
+    #if defined(ARDUINO_RASPBERRY_PI_PICO) && !defined(OPENFIRE_TENSTAR_RP2040_USB)
         // this only needs to be set for rpipico, as Pico W's LED is tied to the WiFi chip,
         // and thus doesn't take pin direction statements.
         pinMode(PIN_LED, OUTPUT);
@@ -104,7 +104,7 @@ void OF_RGB::SetLedPackedColor(const uint32_t &color)
     byte g = highByte(color);
     byte b = lowByte(color);
 
-#ifdef ARDUINO_RASPBERRY_PI_PICO
+#if defined(ARDUINO_RASPBERRY_PI_PICO) && !defined(OPENFIRE_TENSTAR_RP2040_USB)
     // since Pico LED is a simple on/off, round down and average the total color.
     // TODO: Pico W will lock up when addressing its LED (WiFi module problems?)
     if(r < 100 && g < 100 && b < 100)
@@ -167,7 +167,7 @@ void OF_RGB::LedUpdate(const uint8_t &r, const uint8_t &g, const uint8_t &b)
         }
     #endif // CUSTOM_NEOPIXEL
 
-    #ifdef ARDUINO_RASPBERRY_PI_PICO
+    #if defined(ARDUINO_RASPBERRY_PI_PICO) && !defined(OPENFIRE_TENSTAR_RP2040_USB)
     // TODO: Pico W will lock up when addressing its LED (WiFi module problems?)
         if(r < 100 && g < 100 && b < 100) digitalWrite(PIN_LED, LOW);
         else digitalWrite(PIN_LED, HIGH);
